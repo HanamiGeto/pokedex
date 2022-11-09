@@ -24,9 +24,9 @@ body {
     margin: 20px auto;
 }
 
-#pokedex {
+.pokedex {
     min-height: 50vh;
-    background-color: #49D0B0;
+    /* background-color: #49D0B0; */
     color: white;
     display: flex;
     padding: 24px;
@@ -41,16 +41,16 @@ body {
     flex-direction: column;
     background-color: white;
     border-radius: 40px;
-    /* height: 100px; */
+    height: 400px;
     margin-top: -40px;
     padding: 24px
 }
 
-.info-container > img {
+.pokedex > img {
     height: 300px;
     object-fit: contain;
-    position: absolute;
-    top: 224px;
+    position: relative;
+    top: 45px;
     align-self: center;
 }
 
@@ -118,17 +118,20 @@ body {
 .pokemon-info-container {
     display: flex;
     justify-content: center;
-    /* height: calc(100vh - 96px); */
+    height: 100vh;
     background-color: rgba(255, 255, 255, 0.795);
-    position: absolute;
-    top: 96px;
+    position: sticky;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: 2;
 }
 
 .pokemon-info-card {
-    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 70px;
     width: 500px;
 }
 
@@ -183,6 +186,16 @@ h2 {
 
 li > .active {
     border-bottom: 2px solid rgba(0, 0, 0, 0.418) !important;
+}
+
+.first-stats {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+}
+
+.first-stats > p {
+    padding-left: 16px;
 }
 
 .about-container {
@@ -259,4 +272,12 @@ li > .active {
 
 .evo-arrow {
     height: 30px !important;
+}
+
+.bg-stats-color1 {
+    background-color: #66cf80 !important;
+}
+
+.bg-stats-color2 {
+    background-color: #fd6868 !important; 
 }

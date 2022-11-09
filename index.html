@@ -45,8 +45,8 @@
 
     <!-- detailed pokemon card -->
 
-    <div class="pokemon-info-container">
-        <div class="pokemon-info-card">
+    <div class="pokemon-info-container d-none" id="pokemon-info-container">
+        <!-- <div class="pokemon-info-card">
             <div id="pokedex">
                 <div class="head-icons">
                     <img src="img/arrow-118-32.png">
@@ -60,9 +60,9 @@
                     <span class="attribute" id="">Grass</span>
                     <span class="attribute" id="">Poison</span>
                 </div>
+                <img id="pokemon-img-detail1">
             </div>
             <div class="info-container">
-                <img id="pokemon-img-detail1">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill"
@@ -83,18 +83,19 @@
                 <div class="tab-content" id="pills-tabContent">
                     <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
                         aria-labelledby="pills-home-tab" tabindex="0">
-                        <div class="about-container">
-                            <div class="about-properties">
-                                <span>Species</span>
-                                <span>Height</span>
-                                <span>Weight</span>
-                                <span>Abilities</span>
-                            </div>
-                            <div class="properties">
-                                <span>Species</span>
-                                <span>Height</span>
-                                <span>Weight</span>
-                                <span>Abilities</span>
+                        <div class="first-stats">
+                            <p id="flavor-text">A strange seed was planted on its back at birth.The plant sprouts and grows with this POKéMON.</p>
+                            <div class="about-container">
+                                <div class="about-properties">
+                                    <span>Height</span>
+                                    <span>Weight</span>
+                                    <span>Abilities</span>
+                                </div>
+                                <div class="properties">
+                                    <span id="height">Height</span>
+                                    <span id="weight">Weight</span>
+                                    <span id="abilities">Abilities</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -111,50 +112,56 @@
                                 <span>Total</span>
                             </div>
                             <div class="properties">
-                                <span>45</span>
-                                <span>60</span>
-                                <span>48</span>
-                                <span>65</span>
-                                <span>65</span>
-                                <span>45</span>
-                                <span>317</span>
+                                <span id="hp">45</span>
+                                <span id="atk">60</span>
+                                <span id="def">48</span>
+                                <span id="sp-atk">65</span>
+                                <span id="sp-def">65</span>
+                                <span id="speed">45</span>
+                                <span id="total">317</span>
                             </div>
                             <div class="bar">
-
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="hp-bar" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
 
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="atk-bar" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="def-bar" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="sp-atk-bar" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="sp-def-bar" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="speed-bar" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar" role="progressbar" aria-label="Example 1px high"
-                                        style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                    <div id="total-bar" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width: 25%;" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                             </div>
@@ -190,7 +197,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </body>
 

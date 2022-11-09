@@ -1,4 +1,9 @@
 let currentPokemon;
+let allPokemon = [];
+let pokemonSpecies;
+let allPokemonSpecies = [];
+let pokemonEvolution;
+let allPokemonEvolutions = [];
 
 const color = {
     grass: '#49D0B0',
@@ -14,34 +19,66 @@ const color = {
     psychic: '#F96CA4',
     rock: '#C5B67C',
     ghost: '#7C7CC5',
-    ice: '#AABB22',
+    ice: '#98D8D8',
     dragon: '#8275E0'
 };
 
 
-
-
 async function loadPokemon() {
-    for (let i = 1; i < 2; i++) {
+    for (let i = 1; i < 152; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
         let response = await fetch(url);
         currentPokemon = await response.json();
+        allPokemon.push(currentPokemon);
+    }
+    showAllPokemons();
+    loadPokemonSpecies();
+}
+
+
+async function loadPokemonSpecies() {
+    for (let i = 1; i < 152; i++) {
+        let url = `https://pokeapi.co/api/v2/pokemon-species/${i}`;
+        let response = await fetch(url);
+        pokemonSpecies = await response.json();
+        allPokemonSpecies.push(pokemonSpecies);
+    }
+    loadPokemonEvolutions();
+}
+
+
+async function loadPokemonEvolutions() {
+    for (let i = 0; i < 151; i++) {
+        let url = allPokemonSpecies[i]['evolution_chain']['url'];
+        let response = await fetch(url);
+        pokemonEvolution = await response.json();
+        allPokemonEvolutions.push(pokemonEvolution);
+    }
+}
+
+
+function showAllPokemons() {
+    for (let i = 0; i < 21; i++) {
         document.getElementById('pokemon-list-container').innerHTML += createPokemonCard(i);
         renderPokemonInfo(i);
-        changeBackgroundColor(i);
-        renderDetailedPokemonInfo();
+        changeBackgroundColor('pokemon-card', i);
     }
 }
 
 
 function renderPokemonInfo(i) {
-    document.getElementById(`pokemon-name${i}`).innerHTML = capitalizeFirstLetter(currentPokemon['name']);
-    document.getElementById(`pokemon-img${i}`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-    document.getElementById(`first-type${i}`).innerHTML = capitalizeFirstLetter(currentPokemon['types'][0]['type']['name']);
-    if (currentPokemon['types'].length === 2) { // looks if the pokemon has two types
-        document.getElementById(`second-type${i}`).innerHTML = capitalizeFirstLetter(currentPokemon['types'][1]['type']['name']);
+    document.getElementById(`pokemon-name${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
+    document.getElementById(`pokemon-img${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
+    renderPokemonTypes('first-type', 'second-type', i);
+}
+
+
+function renderPokemonTypes(id1, id2, i) {
+    document.getElementById(`${id1}${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['types'][0]['type']['name']);
+    if (allPokemon[i]['types'].length === 2) { // looks if the pokemon has two types
+        document.getElementById(`${id2}${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['types'][1]['type']['name']);
     } else {
-        document.getElementById(`second-type${i}`).classList.add('d-none'); // if pokemon has only one type, second span is getting display none
+        document.getElementById(`${id2}${i}`).classList.add('d-none'); // if pokemon has only one type, second span is getting display none
     }
 }
 
@@ -67,23 +104,247 @@ function createPokemonCard(i) {
 }
 
 
-function changeBackgroundColor(i) {
-    let type = currentPokemon['types'][0]['type']['name'];
-    document.getElementById(`pokemon-card${i}`).style.backgroundColor = color[type];
+function changeBackgroundColor(id, i) {
+    let type = allPokemon[i]['types'][0]['type']['name'];
+    document.getElementById(`${id}${i}`).style.backgroundColor = color[type];
 }
 
 
 function openPokemonInfo(i) {
-
+    document.body.style.overflowY = 'hidden';
+    document.getElementById('pokemon-info-container').classList.remove('d-none');
+    showPokemonInfoCard(i);
 }
 
 
-function renderDetailedPokemonInfo() {
-    document.getElementById(`pokemon-name-detail1`).innerHTML = capitalizeFirstLetter(currentPokemon['name']);
-    document.getElementById(`pokemon-img-detail1`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-    document.getElementById(`pokemon-img-detail2`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-    document.getElementById(`pokemon-img-detail3`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-    document.getElementById(`pokemon-img-detail4`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-    document.getElementById(`pokemon-img-detail5`).src = currentPokemon['sprites']['other']['official-artwork']['front_default'];
-
+function showPokemonInfoCard(i) {
+    document.getElementById('pokemon-info-container').innerHTML = createPokemonInfoContainer(i);
+    changeBackgroundColor('pokedex', i);
+    renderDetailedPokemonInfo(i);
 }
+
+
+function closePokemonInfo() {
+    document.getElementById('pokemon-info-container').classList.add('d-none');
+    document.body.style.overflowY = 'scroll';
+}
+
+
+function renderDetailedPokemonInfo(i) {
+    document.getElementById(`pokemon-name-detail${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
+    renderPokemonTypes('detailed-first-type', 'detailed-second-type', i);
+    document.getElementById(`pokemon-img-detail${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
+    changePokemonID(i);
+    changeProperties(i);
+    changeStats(i);
+    changeFlavorText(i);
+    showEvolutions(i);
+}
+
+
+function changePokemonID(i) {
+    let pokemonId = i + 1;
+    document.getElementById(`pokemon-number${i}`).innerHTML = String("000" + pokemonId).slice(-3);
+}
+
+
+function changeProperties(i) {
+    let height = allPokemon[i]['height'];
+    let weight = allPokemon[i]['weight'];
+    let abilities = allPokemon[i]['abilities'];
+    document.getElementById(`height${i}`).innerHTML = (height.toFixed(1) / 10) + ' m';
+    document.getElementById(`weight${i}`).innerHTML = (weight.toFixed(1) / 10) + ' kg';
+    if (abilities.length === 2) {
+        document.getElementById(`abilities${i}`).innerHTML = abilities[0]['ability']['name'] + ', ' + abilities[1]['ability']['name'];
+    } else {
+        document.getElementById(`abilities${i}`).innerHTML = abilities[0]['ability']['name'];
+    }
+}
+
+
+function changeFlavorText(i) {
+    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][0]['flavor_text'];
+    document.getElementById(`flavor-text${i}`).innerHTML = flavorText.replace('\f', '\n');
+}
+
+
+function changeStats(i) {
+    let pokemonStats = allPokemon[i]['stats'];
+    document.getElementById(`hp${i}`).innerHTML = pokemonStats[0]['base_stat'];
+    document.getElementById(`atk${i}`).innerHTML = pokemonStats[1]['base_stat'];
+    document.getElementById(`def${i}`).innerHTML = pokemonStats[2]['base_stat'];
+    document.getElementById(`sp-atk${i}`).innerHTML = pokemonStats[3]['base_stat'];
+    document.getElementById(`sp-def${i}`).innerHTML = pokemonStats[4]['base_stat'];
+    document.getElementById(`speed${i}`).innerHTML = pokemonStats[5]['base_stat'];
+}
+
+
+function showStatsbar(i) {
+    let pokemonStats = allPokemon[i]['stats'];
+    document.getElementById(`hp-bar${i}`).style.width = pokemonStats[0]['base_stat'] + '%';
+    document.getElementById(`atk-bar${i}`).style.width = pokemonStats[1]['base_stat'] + '%';
+    document.getElementById(`def-bar${i}`).style.width = pokemonStats[2]['base_stat'] + '%';
+    document.getElementById(`sp-atk-bar${i}`).style.width = pokemonStats[3]['base_stat'] + '%';
+    document.getElementById(`sp-def-bar${i}`).style.width = pokemonStats[4]['base_stat'] + '%';
+    document.getElementById(`speed-bar${i}`).style.width = pokemonStats[5]['base_stat'] + '%';
+}
+
+
+function showEvolutions(i) {
+    let firstPokemon = allPokemonEvolutions[i]['chain']['species']['name'];
+    console.log(allPokemon.find(e => e[i]['name'] === firstPokemon));
+    console.log(firstPokemon);
+}
+
+
+function createPokemonInfoContainer(i) {
+    return `
+    <div class="pokemon-info-card">
+            <div id="pokedex${i}" class="pokedex">
+                <div class="head-icons">
+                    <img src="img/arrow-118-32.png" onclick="closePokemonInfo()">
+                    <img src="img/favorite-3-32.png">
+                </div>
+                <div class="head-content">
+                    <h2 id="pokemon-name-detail${i}"></h2>
+                    <span>#<span id="pokemon-number${i}">001</span></span>
+                </div>
+                <div>
+                    <span class="attribute" id="detailed-first-type${i}">Grass</span>
+                    <span class="attribute" id="detailed-second-type${i}">Poison</span>
+                </div>
+                <img id="pokemon-img-detail${i}">
+            </div>
+            <div class="info-container">
+                <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home"
+                            aria-selected="true">About</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile"
+                            aria-selected="false" onclick="showStatsbar(${i})">Base Stats</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact"
+                            aria-selected="false">Evolution</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
+                        aria-labelledby="pills-home-tab" tabindex="0">
+                        <div class="first-stats">
+                            <p id="flavor-text${i}">A strange seed was planted on its back at birth.The plant sprouts and grows with this POKéMON.</p>
+                            <div class="about-container">
+                                <div class="about-properties">
+                                    <span>Height</span>
+                                    <span>Weight</span>
+                                    <span>Abilities</span>
+                                </div>
+                                <div class="properties">
+                                    <span id="height${i}">1</span>
+                                    <span id="weight${i}">1</span>
+                                    <span id="abilities${i}">Abilities</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab"
+                        tabindex="0">
+                        <div class="about-container">
+                            <div class="about-properties">
+                                <span>HP</span>
+                                <span>Attack</span>
+                                <span>Defense</span>
+                                <span>Sp. Atk</span>
+                                <span>Sp. Def</span>
+                                <span>Speed</span>
+                            </div>
+                            <div class="properties">
+                                <span id="hp${i}">45</span>
+                                <span id="atk${i}">60</span>
+                                <span id="def${i}">48</span>
+                                <span id="sp-atk${i}">65</span>
+                                <span id="sp-def${i}">65</span>
+                                <span id="speed${i}">45</span>
+                            </div>
+                            <div class="bar">
+                                <div class="progress" style="height: 4px;">
+                                    <div id="hp-bar${i}" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+
+                                <div class="progress" style="height: 4px;">
+                                    <div id="atk-bar${i}" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div id="def-bar${i}" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div id="sp-atk-bar${i}" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div id="sp-def-bar${i}" class="progress-bar bg-stats-color1" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div id="speed-bar${i}" class="progress-bar bg-stats-color2" role="progressbar"
+                                        aria-label="Example 1px high" style="width:" aria-valuenow="25"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab"
+                        tabindex="0">
+                        <div class="about-container evolution-container">
+                            <span>Evolution Chain</span>
+                            <div class="evolution">
+                                <div class="evolution-with-name">
+                                    <img id="pokemon-evo-img-first${i}">
+                                    <span id="pokemon-evo-name-first${i}">asdfsdfs</span>
+                                </div>
+                                <img class="evo-arrow" src="img/arrow-8-32.png">
+                                <div class="evolution-with-name">
+                                    <img id="pokemon-evo-img-second${i}">
+                                    <span id="pokemon-evo-name-second${i}">asdfsdfs</span>
+                                </div>
+                            </div>
+                            <div class="evolution">
+                                <div class="evolution-with-name">
+                                    <img id="pokemon-evo-img-third${i}">
+                                    <span id="pokemon-evo-name-third${i}">asdfsdfs</span>
+                                </div>
+                                <img class="evo-arrow" src="img/arrow-8-32.png">
+                                <div class="evolution-with-name">
+                                    <img id="pokemon-evo-img-fourth${i}">
+                                    <span id="pokemon-evo-name-fourth${i}">asdfsdfs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
