@@ -4,6 +4,8 @@ let pokemonSpecies;
 let allPokemonSpecies = [];
 let pokemonEvolution;
 let allPokemonEvolutions = [];
+let start = 0;
+let updatePokemon = 25;
 
 const color = {
     grass: '#49D0B0',
@@ -20,24 +22,40 @@ const color = {
     rock: '#C5B67C',
     ghost: '#7C7CC5',
     ice: '#98D8D8',
-    dragon: '#8275E0'
+    dragon: '#8275E0',
+    flying: '#99A8FF',
+    dark: '#8B6E5F',
+    steel: '#B6B6C5'
 };
 
 
+window.onscroll = function (ev) {
+    if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
+        loadMorePokemon();
+        loadPokemon();
+    }
+};
+
+
+function init() {
+    loadPokemon();
+}
+
+
 async function loadPokemon() {
-    for (let i = 1; i < 152; i++) {
+    for (let i = 1; i < 906; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
         let response = await fetch(url);
         currentPokemon = await response.json();
         allPokemon.push(currentPokemon);
     }
-    showAllPokemons();
-    loadPokemonSpecies();
+    await loadPokemonSpecies();
+    showPokemons();
 }
 
 
 async function loadPokemonSpecies() {
-    for (let i = 1; i < 152; i++) {
+    for (let i = 1; i < 905; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon-species/${i}`;
         let response = await fetch(url);
         pokemonSpecies = await response.json();
@@ -48,7 +66,7 @@ async function loadPokemonSpecies() {
 
 
 async function loadPokemonEvolutions() {
-    for (let i = 0; i < 151; i++) {
+    for (let i = 0; i < 468; i++) {
         let url = allPokemonSpecies[i]['evolution_chain']['url'];
         let response = await fetch(url);
         pokemonEvolution = await response.json();
@@ -57,8 +75,8 @@ async function loadPokemonEvolutions() {
 }
 
 
-function showAllPokemons() {
-    for (let i = 0; i < 21; i++) {
+function showPokemons() {
+    for (let i = start; i < updatePokemon; i++) {
         document.getElementById('pokemon-list-container').innerHTML += createPokemonCard(i);
         renderPokemonInfo(i);
         changeBackgroundColor('pokemon-card', i);
@@ -66,10 +84,27 @@ function showAllPokemons() {
 }
 
 
+function loadMorePokemon() {
+    if (updatePokemon >= 906) {
+        updatePokemon = 906;
+    } else {
+        updatePokemon += 25;
+        start += 25;
+    }
+}
+
+
 function renderPokemonInfo(i) {
+    // changePokemonNameandImg(i, `pokemon-name${i}`, `pokemon-img${i}`, allPokemon);
     document.getElementById(`pokemon-name${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
     document.getElementById(`pokemon-img${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
     renderPokemonTypes('first-type', 'second-type', i);
+}
+
+
+function changePokemonNameandImg(i, id1, id2, pokemonArray) {
+    document.getElementById(`${id1}${i}`).innerHTML = capitalizeFirstLetter(pokemonArray[i]['name']);
+    document.getElementById(`${id2}${i}`).src = pokemonArray[i]['sprites']['other']['official-artwork']['front_default'];
 }
 
 
@@ -163,7 +198,7 @@ function changeProperties(i) {
 
 
 function changeFlavorText(i) {
-    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][0]['flavor_text'];
+    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][1]['flavor_text'];
     document.getElementById(`flavor-text${i}`).innerHTML = flavorText.replace('\f', '\n');
 }
 
@@ -192,8 +227,60 @@ function showStatsbar(i) {
 
 function showEvolutions(i) {
     let firstPokemon = allPokemonEvolutions[i]['chain']['species']['name'];
-    console.log(allPokemon.find(e => e[i]['name'] === firstPokemon));
-    console.log(firstPokemon);
+    // let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
+    // let evoSecond = allPokemonEvolutions[i]['chain']['evolves_to'];
+    // let evoThird = allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'];
+    // shows first evolution
+    document.getElementById(`pokemon-evo-name-first${i}`).innerHTML = capitalizeFirstLetter(findPokemon(firstPokemon)['name']);
+    document.getElementById(`pokemon-evo-img-first${i}`).src = findPokemon(firstPokemon)['sprites']['other']['official-artwork']['front_default'];
+    checkSecondEvolution(i)
+    checkThirdEvolution(i);
+}
+
+
+function checkSecondEvolution(i) {
+    if (evoSecond(i).length === 1) {
+        let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
+        // shows second evolution
+        document.getElementById(`pokemon-evo-name-second${i}`).innerHTML = capitalizeFirstLetter(findPokemon(secondPokemon)['name']);
+        document.getElementById(`pokemon-evo-img-second${i}`).src = findPokemon(secondPokemon)['sprites']['other']['official-artwork']['front_default'];
+    } else {
+        document.getElementById(`evo-headline${i}`).innerHTML = 'No evolution for this Pokemon!';
+        document.getElementById(`first-evo${i}`).classList.add('d-none');
+    }
+}
+
+
+function checkThirdEvolution(i) {
+    if (evoSecond(i).length === 0) { // checks if the pokemon has a evolution or not
+        document.getElementById(`last-evo${i}`).classList.add('d-none');
+    } else if (evoThird(i).length === 1) { // checks if there is a third evolution
+        let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
+        let thirdPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'][0]['species']['name'];
+        document.getElementById(`pokemon-evo-name-third${i}`).innerHTML = capitalizeFirstLetter(findPokemon(secondPokemon)['name']);
+        document.getElementById(`pokemon-evo-img-third${i}`).src = findPokemon(secondPokemon)['sprites']['other']['official-artwork']['front_default'];
+        // shows third evolution
+        document.getElementById(`pokemon-evo-name-fourth${i}`).innerHTML = capitalizeFirstLetter(findPokemon(thirdPokemon)['name']);
+        document.getElementById(`pokemon-evo-img-fourth${i}`).src = findPokemon(thirdPokemon)['sprites']['other']['official-artwork']['front_default'];
+    } else {
+        document.getElementById(`last-evo${i}`).classList.add('d-none');
+    }
+}
+
+
+
+function findPokemon(pokemon) {
+    return allPokemon.find(e => e['name'] === pokemon);
+}
+
+
+function evoSecond(i) {
+    return allPokemonEvolutions[i]['chain']['evolves_to'];
+}
+
+
+function evoThird(i) {
+    return allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'];
 }
 
 
@@ -316,8 +403,8 @@ function createPokemonInfoContainer(i) {
                     <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab"
                         tabindex="0">
                         <div class="about-container evolution-container">
-                            <span>Evolution Chain</span>
-                            <div class="evolution">
+                            <span id="evo-headline${i}">Evolution Chain</span>
+                            <div class="evolution" id="first-evo${i}">
                                 <div class="evolution-with-name">
                                     <img id="pokemon-evo-img-first${i}">
                                     <span id="pokemon-evo-name-first${i}">asdfsdfs</span>
@@ -328,7 +415,7 @@ function createPokemonInfoContainer(i) {
                                     <span id="pokemon-evo-name-second${i}">asdfsdfs</span>
                                 </div>
                             </div>
-                            <div class="evolution">
+                            <div class="evolution" id="last-evo${i}">
                                 <div class="evolution-with-name">
                                     <img id="pokemon-evo-img-third${i}">
                                     <span id="pokemon-evo-name-third${i}">asdfsdfs</span>
