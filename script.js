@@ -1,11 +1,16 @@
 let currentPokemon;
+let currentSearchPokemon;
 let allPokemon = [];
+let searchPokemon = [];
 let pokemonSpecies;
 let allPokemonSpecies = [];
 let pokemonEvolution;
 let allPokemonEvolutions = [];
 let start = 0;
 let updatePokemon = 25;
+let liked;
+let allLiked = [];
+let currentPkmn;
 
 const color = {
     grass: '#49D0B0',
@@ -29,7 +34,7 @@ const color = {
 };
 
 
-window.onscroll = function (ev) {
+window.onscroll = function (ev) { // if window is scrolled to the end, 25 more Pokemons will load up
     if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
         loadMorePokemon();
         loadPokemon();
@@ -39,33 +44,44 @@ window.onscroll = function (ev) {
 
 function init() {
     loadPokemon();
+    loadAllPokemon();
+    loadPokemonSpecies();
 }
 
 
-async function loadPokemon() {
-    for (let i = 1; i < 906; i++) {
+async function loadPokemon() { // fetching the first 25 pokemons and is pushing them into the array (lazy-loading)
+    for (let i = start + 1; i < updatePokemon + 1; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
         let response = await fetch(url);
         currentPokemon = await response.json();
         allPokemon.push(currentPokemon);
     }
-    await loadPokemonSpecies();
-    showPokemons();
+    setTimeout(showPokemons, 500);
 }
 
 
-async function loadPokemonSpecies() {
+async function loadAllPokemon() { // fetching all pokemons in the background 
+    for (let i = 1; i < 906; i++) {
+        let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
+        let response = await fetch(url);
+        currentSearchPokemon = await response.json();
+        searchPokemon.push(currentSearchPokemon);
+    }
+}
+
+
+async function loadPokemonSpecies() { // fetching all pokemon species in the background 
     for (let i = 1; i < 905; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon-species/${i}`;
         let response = await fetch(url);
         pokemonSpecies = await response.json();
         allPokemonSpecies.push(pokemonSpecies);
     }
-    loadPokemonEvolutions();
+    await loadPokemonEvolutions();
 }
 
 
-async function loadPokemonEvolutions() {
+async function loadPokemonEvolutions() { // fetching all pokemon evolutions in the background 
     for (let i = 0; i < 468; i++) {
         let url = allPokemonSpecies[i]['evolution_chain']['url'];
         let response = await fetch(url);
@@ -75,11 +91,13 @@ async function loadPokemonEvolutions() {
 }
 
 
-function showPokemons() {
+function showPokemons() {   // shows first 25 pokemons and every card gets a like button
     for (let i = start; i < updatePokemon; i++) {
         document.getElementById('pokemon-list-container').innerHTML += createPokemonCard(i);
         renderPokemonInfo(i);
         changeBackgroundColor('pokemon-card', i);
+        liked = 'white';
+        allLiked.push(liked);
     }
 }
 
@@ -95,16 +113,14 @@ function loadMorePokemon() {
 
 
 function renderPokemonInfo(i) {
-    // changePokemonNameandImg(i, `pokemon-name${i}`, `pokemon-img${i}`, allPokemon);
-    document.getElementById(`pokemon-name${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
-    document.getElementById(`pokemon-img${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
+    changeNameAndImg(i);
     renderPokemonTypes('first-type', 'second-type', i);
 }
 
 
-function changePokemonNameandImg(i, id1, id2, pokemonArray) {
-    document.getElementById(`${id1}${i}`).innerHTML = capitalizeFirstLetter(pokemonArray[i]['name']);
-    document.getElementById(`${id2}${i}`).src = pokemonArray[i]['sprites']['other']['official-artwork']['front_default'];
+function changeNameAndImg(i) {
+    document.getElementById(`pokemon-name${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
+    document.getElementById(`pokemon-img${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
 }
 
 
@@ -149,11 +165,13 @@ function openPokemonInfo(i) {
     document.body.style.overflowY = 'hidden';
     document.getElementById('pokemon-info-container').classList.remove('d-none');
     showPokemonInfoCard(i);
+    currentPkmn = i;
+    showArrowsToGoThroughPokemons();
 }
 
 
 function showPokemonInfoCard(i) {
-    document.getElementById('pokemon-info-container').innerHTML = createPokemonInfoContainer(i);
+    document.getElementById('pokemon-info-container').innerHTML = createPokemonInfoContainer(i, allLiked[i]);
     changeBackgroundColor('pokedex', i);
     renderDetailedPokemonInfo(i);
 }
@@ -166,14 +184,19 @@ function closePokemonInfo() {
 
 
 function renderDetailedPokemonInfo(i) {
-    document.getElementById(`pokemon-name-detail${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
+    changeNameAndImgDetailed(i);
     renderPokemonTypes('detailed-first-type', 'detailed-second-type', i);
-    document.getElementById(`pokemon-img-detail${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
     changePokemonID(i);
     changeProperties(i);
     changeStats(i);
     changeFlavorText(i);
-    showEvolutions(i);
+    loadEvolutions(i);
+}
+
+
+function changeNameAndImgDetailed(i) {
+    document.getElementById(`pokemon-name-detail${i}`).innerHTML = capitalizeFirstLetter(allPokemon[i]['name']);
+    document.getElementById(`pokemon-img-detail${i}`).src = allPokemon[i]['sprites']['other']['official-artwork']['front_default'];
 }
 
 
@@ -183,7 +206,7 @@ function changePokemonID(i) {
 }
 
 
-function changeProperties(i) {
+function changeProperties(i) { // changes the properties of height, weight and abilities
     let height = allPokemon[i]['height'];
     let weight = allPokemon[i]['weight'];
     let abilities = allPokemon[i]['abilities'];
@@ -197,8 +220,8 @@ function changeProperties(i) {
 }
 
 
-function changeFlavorText(i) {
-    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][1]['flavor_text'];
+function changeFlavorText(i) { //flavor text is a brief description of the pokemon
+    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][3]['flavor_text'];
     document.getElementById(`flavor-text${i}`).innerHTML = flavorText.replace('\f', '\n');
 }
 
@@ -226,15 +249,17 @@ function showStatsbar(i) {
 
 
 function showEvolutions(i) {
+    showFirstPokemon(i);
+    checkSecondEvolution(i)
+    checkThirdEvolution(i);
+}
+
+
+function showFirstPokemon(i) {
     let firstPokemon = allPokemonEvolutions[i]['chain']['species']['name'];
-    // let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
-    // let evoSecond = allPokemonEvolutions[i]['chain']['evolves_to'];
-    // let evoThird = allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'];
     // shows first evolution
     document.getElementById(`pokemon-evo-name-first${i}`).innerHTML = capitalizeFirstLetter(findPokemon(firstPokemon)['name']);
     document.getElementById(`pokemon-evo-img-first${i}`).src = findPokemon(firstPokemon)['sprites']['other']['official-artwork']['front_default'];
-    checkSecondEvolution(i)
-    checkThirdEvolution(i);
 }
 
 
@@ -268,9 +293,16 @@ function checkThirdEvolution(i) {
 }
 
 
+function loadEvolutions(i) {    
+    if (allPokemonEvolutions.length === 468) {  // if all pokemon evolutions are pushed into the array, evolution button will be activated
+        document.getElementById('pills-contact-tab').removeAttribute('disabled');
+        showEvolutions(i);
+    }
+}
 
-function findPokemon(pokemon) {
-    return allPokemon.find(e => e['name'] === pokemon);
+
+function findPokemon(pokemon) { // search and matching the pokemon for the evolutions
+    return searchPokemon.find(e => e['name'] === pokemon);
 }
 
 
@@ -284,13 +316,88 @@ function evoThird(i) {
 }
 
 
-function createPokemonInfoContainer(i) {
+function like(i) {
+    let likeImg = document.getElementById(`like${i}`);
+    let like = allLiked[i];
+    if (like == 'white') {
+        likeImg.src = 'img/heart-red.png';
+        allLiked[i] = 'red';
+    } else {
+        likeImg.src = 'img/heart-white.png';
+        allLiked[i] = 'white';
+    }
+}
+
+
+function filterPokemon() {
+    let search = document.getElementById('search').value;
+    search = search.toLowerCase();
+    let pokemonList = document.getElementById('pokemon-list-container');
+    pokemonList.innerHTML = '';
+    for (let i = 0; i < allPokemon.length; i++) {
+        let pokemon = allPokemon[i]['name'];
+        if (pokemon.toLowerCase().includes(search)) {
+            pokemonList.innerHTML += createPokemonCard(i);
+            renderPokemonInfo(i);
+            changeBackgroundColor('pokemon-card', i);
+        }
+    }
+}
+
+
+function previousPokemon() {
+    openPokemonInfo(currentPkmn - 1);
+}
+
+
+function nextPokemon() {
+    openPokemonInfo(currentPkmn + 1);
+}
+
+
+function showArrowsToGoThroughPokemons() {
+    if (currentPkmn === 0) { // if first pokemon-info-card will be opened, it only shows right arrow
+        showOnlyRightArrow();
+    } else if (currentPkmn === allPokemon.length - 1) { // if last pokemon-info-card will be opened, it only shows left arrow
+        showOnlyLeftArrow();
+    } else {
+        showAllArrows();
+    }
+}
+
+
+function showOnlyRightArrow() {
+    document.getElementById('right-arrow-placeholder').classList.add('d-none');
+    document.getElementById('right-arrow').classList.remove('d-none');
+}
+
+
+function showOnlyLeftArrow() {
+    document.getElementById('left-arrow-placeholder').classList.add('d-none');
+    document.getElementById('left-arrow').classList.remove('d-none');
+}
+
+
+function showAllArrows() {
+    document.getElementById('right-arrow-placeholder').classList.add('d-none');
+    document.getElementById('right-arrow').classList.remove('d-none');
+    document.getElementById('left-arrow-placeholder').classList.add('d-none');
+    document.getElementById('left-arrow').classList.remove('d-none');
+}
+
+
+function doNotClose(event) {
+    event.stopPropagation();
+}
+
+
+function createPokemonInfoContainer(i, liked) {
     return `
-    <div class="pokemon-info-card">
+    <div class="pokemon-info-card" onclick="doNotClose(event)">
             <div id="pokedex${i}" class="pokedex">
                 <div class="head-icons">
                     <img src="img/arrow-118-32.png" onclick="closePokemonInfo()">
-                    <img src="img/favorite-3-32.png">
+                    <img id="like${i}" src="img/heart-${liked}.png" onclick="like(${i})">
                 </div>
                 <div class="head-content">
                     <h2 id="pokemon-name-detail${i}"></h2>
@@ -300,7 +407,13 @@ function createPokemonInfoContainer(i) {
                     <span class="attribute" id="detailed-first-type${i}">Grass</span>
                     <span class="attribute" id="detailed-second-type${i}">Poison</span>
                 </div>
-                <img id="pokemon-img-detail${i}">
+                <div class="img-with-arrows">
+                    <img class="arrows d-none" id="left-arrow" src="img/arrow-89-32.png" onclick="previousPokemon()">
+                    <div class="arrow-placeholder" id="left-arrow-placeholder"></div>
+                    <img class="pokemon-img-detail" id="pokemon-img-detail${i}">
+                    <img class="arrows d-none" id="right-arrow" src="img/arrow-25-32.png" onclick="nextPokemon()">
+                    <div class="arrow-placeholder"  id="right-arrow-placeholder"></div>
+                </div>
             </div>
             <div class="info-container">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -317,7 +430,7 @@ function createPokemonInfoContainer(i) {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
                             data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact"
-                            aria-selected="false">Evolution</button>
+                            aria-selected="false" disabled>Evolution</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
