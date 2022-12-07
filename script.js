@@ -1,16 +1,12 @@
 let currentPokemon;
-let currentSearchPokemon;
 let allPokemon = [];
-let searchPokemon = [];
-let pokemonSpecies;
-let allPokemonSpecies = [];
-let pokemonEvolution;
-let allPokemonEvolutions = [];
 let start = 0;
 let updatePokemon = 25;
 let liked;
 let allLiked = [];
 let currentPkmn;
+let currentEvo;
+let evoChain;
 
 const color = {
     grass: '#49D0B0',
@@ -44,12 +40,10 @@ window.onscroll = function (ev) { // if window is scrolled to the end, 25 more P
 
 function init() {
     loadPokemon();
-    loadAllPokemon();
-    loadPokemonSpecies();
 }
 
 
-async function loadPokemon() { // fetching the first 25 pokemons and is pushing them into the array (lazy-loading)
+async function loadPokemon() { // fetching the first 25 pokemons and is pushing them into the array 
     for (let i = start + 1; i < updatePokemon + 1; i++) {
         let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
         let response = await fetch(url);
@@ -57,37 +51,6 @@ async function loadPokemon() { // fetching the first 25 pokemons and is pushing 
         allPokemon.push(currentPokemon);
     }
     setTimeout(showPokemons, 500);
-}
-
-
-async function loadAllPokemon() { // fetching all pokemons in the background 
-    for (let i = 1; i < 906; i++) {
-        let url = `https://pokeapi.co/api/v2/pokemon/${i}`;
-        let response = await fetch(url);
-        currentSearchPokemon = await response.json();
-        searchPokemon.push(currentSearchPokemon);
-    }
-}
-
-
-async function loadPokemonSpecies() { // fetching all pokemon species in the background 
-    for (let i = 1; i < 905; i++) {
-        let url = `https://pokeapi.co/api/v2/pokemon-species/${i}`;
-        let response = await fetch(url);
-        pokemonSpecies = await response.json();
-        allPokemonSpecies.push(pokemonSpecies);
-    }
-    await loadPokemonEvolutions();
-}
-
-
-async function loadPokemonEvolutions() { // fetching all pokemon evolutions in the background 
-    for (let i = 0; i < 468; i++) {
-        let url = allPokemonSpecies[i]['evolution_chain']['url'];
-        let response = await fetch(url);
-        pokemonEvolution = await response.json();
-        allPokemonEvolutions.push(pokemonEvolution);
-    }
 }
 
 
@@ -183,14 +146,15 @@ function closePokemonInfo() {
 }
 
 
-function renderDetailedPokemonInfo(i) {
+async function renderDetailedPokemonInfo(i) {
     changeNameAndImgDetailed(i);
     renderPokemonTypes('detailed-first-type', 'detailed-second-type', i);
     changePokemonID(i);
     changeProperties(i);
     changeStats(i);
-    changeFlavorText(i);
-    loadEvolutions(i);
+    await changeFlavorText(i);
+    await loadEvolutions(i);
+    await showEvolutions(i);
 }
 
 
@@ -220,9 +184,12 @@ function changeProperties(i) { // changes the properties of height, weight and a
 }
 
 
-function changeFlavorText(i) { //flavor text is a brief description of the pokemon
-    let flavorText = allPokemonSpecies[i]['flavor_text_entries'][3]['flavor_text'];
-    document.getElementById(`flavor-text${i}`).innerHTML = flavorText.replace('\f', '\n');
+async function changeFlavorText(i) { //flavor text is a brief description of the pokemon
+    let url = allPokemon[i]['species']['url'];
+    let response = await fetch(url);
+    let currentPokemonspecies = await response.json();
+    let flavorText = await currentPokemonspecies['flavor_text_entries'][3]['flavor_text'];
+    document.getElementById(`flavor-text${i}`).innerHTML = await flavorText.replace('\f', '\n');
 }
 
 
@@ -248,27 +215,46 @@ function showStatsbar(i) {
 }
 
 
-function showEvolutions(i) {
-    showFirstPokemon(i);
-    checkSecondEvolution(i)
-    checkThirdEvolution(i);
+async function showEvolutions(i) {
+    await showFirstPokemon(i);
+    await checkSecondEvolution(i)
+    await checkThirdEvolution(i);
 }
 
 
-function showFirstPokemon(i) {
-    let firstPokemon = allPokemonEvolutions[i]['chain']['species']['name'];
+async function loadEvolutions(i) {
+    let firstUrl = allPokemon[i]['species']['url'];
+    let firstResponse = await fetch(firstUrl);
+    let currentPokemonspecies = await firstResponse.json();
+    let url = await currentPokemonspecies['evolution_chain']['url'];
+    let response = await fetch(url);
+    currentEvo = await response.json();
+}
+
+
+async function fetchEvolution(evoPokemon) {
+    let url = `https://pokeapi.co/api/v2/pokemon/${evoPokemon}`;
+    let response = await fetch(url);
+    let fetchedPokemon = await response.json();
+    evoChain = await fetchedPokemon['sprites']['other']['official-artwork']['front_default'];
+}
+
+
+async function showFirstPokemon(i) {
+    let firstPokemon = await currentEvo['chain']['species']['name'];
+    await fetchEvolution(firstPokemon)
     // shows first evolution
-    document.getElementById(`pokemon-evo-name-first${i}`).innerHTML = capitalizeFirstLetter(findPokemon(firstPokemon)['name']);
-    document.getElementById(`pokemon-evo-img-first${i}`).src = findPokemon(firstPokemon)['sprites']['other']['official-artwork']['front_default'];
+    document.getElementById(`pokemon-evo-name-first${i}`).innerHTML = capitalizeFirstLetter(await firstPokemon);
+    document.getElementById(`pokemon-evo-img-first${i}`).src = await evoChain;
 }
 
 
-function checkSecondEvolution(i) {
-    if (evoSecond(i).length === 1) {
-        let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
-        // shows second evolution
-        document.getElementById(`pokemon-evo-name-second${i}`).innerHTML = capitalizeFirstLetter(findPokemon(secondPokemon)['name']);
-        document.getElementById(`pokemon-evo-img-second${i}`).src = findPokemon(secondPokemon)['sprites']['other']['official-artwork']['front_default'];
+async function checkSecondEvolution(i) {
+    if (evoSecond().length === 1) {
+        let secondPokemon = await currentEvo['chain']['evolves_to'][0]['species']['name'];
+        await fetchEvolution(secondPokemon);
+        document.getElementById(`pokemon-evo-name-second${i}`).innerHTML = capitalizeFirstLetter(await secondPokemon);
+        document.getElementById(`pokemon-evo-img-second${i}`).src = await evoChain;
     } else {
         document.getElementById(`evo-headline${i}`).innerHTML = 'No evolution for this Pokemon!';
         document.getElementById(`first-evo${i}`).classList.add('d-none');
@@ -276,43 +262,32 @@ function checkSecondEvolution(i) {
 }
 
 
-function checkThirdEvolution(i) {
-    if (evoSecond(i).length === 0) { // checks if the pokemon has a evolution or not
+async function checkThirdEvolution(i) {
+    if (evoSecond().length === 0) { // checks if the pokemon has a evolution or not
         document.getElementById(`last-evo${i}`).classList.add('d-none');
-    } else if (evoThird(i).length === 1) { // checks if there is a third evolution
-        let secondPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['species']['name'];
-        let thirdPokemon = allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'][0]['species']['name'];
-        document.getElementById(`pokemon-evo-name-third${i}`).innerHTML = capitalizeFirstLetter(findPokemon(secondPokemon)['name']);
-        document.getElementById(`pokemon-evo-img-third${i}`).src = findPokemon(secondPokemon)['sprites']['other']['official-artwork']['front_default'];
+    } else if (evoThird().length === 1) { // checks if there is a third evolution
+        let secondPokemon = await currentEvo['chain']['evolves_to'][0]['species']['name'];
+        await fetchEvolution(secondPokemon);        
+        document.getElementById(`pokemon-evo-name-third${i}`).innerHTML = capitalizeFirstLetter(secondPokemon);
+        document.getElementById(`pokemon-evo-img-third${i}`).src = await evoChain;
         // shows third evolution
-        document.getElementById(`pokemon-evo-name-fourth${i}`).innerHTML = capitalizeFirstLetter(findPokemon(thirdPokemon)['name']);
-        document.getElementById(`pokemon-evo-img-fourth${i}`).src = findPokemon(thirdPokemon)['sprites']['other']['official-artwork']['front_default'];
+        let thirdPokemon = await currentEvo['chain']['evolves_to'][0]['evolves_to'][0]['species']['name'];
+        await fetchEvolution(thirdPokemon);
+        document.getElementById(`pokemon-evo-name-fourth${i}`).innerHTML = capitalizeFirstLetter(thirdPokemon);
+        document.getElementById(`pokemon-evo-img-fourth${i}`).src = await evoChain;
     } else {
         document.getElementById(`last-evo${i}`).classList.add('d-none');
     }
 }
 
 
-function loadEvolutions(i) {    
-    if (allPokemonEvolutions.length === 468) {  // if all pokemon evolutions are pushed into the array, evolution button will be activated
-        document.getElementById('pills-contact-tab').removeAttribute('disabled');
-        showEvolutions(i);
-    }
+function evoSecond() {
+    return currentEvo['chain']['evolves_to'];
 }
 
 
-function findPokemon(pokemon) { // search and matching the pokemon for the evolutions
-    return searchPokemon.find(e => e['name'] === pokemon);
-}
-
-
-function evoSecond(i) {
-    return allPokemonEvolutions[i]['chain']['evolves_to'];
-}
-
-
-function evoThird(i) {
-    return allPokemonEvolutions[i]['chain']['evolves_to'][0]['evolves_to'];
+function evoThird() {
+    return currentEvo['chain']['evolves_to'][0]['evolves_to'];
 }
 
 
@@ -430,14 +405,14 @@ function createPokemonInfoContainer(i, liked) {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
                             data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact"
-                            aria-selected="false" disabled>Evolution</button>
+                            aria-selected="false">Evolution</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
                     <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
                         aria-labelledby="pills-home-tab" tabindex="0">
                         <div class="first-stats">
-                            <p id="flavor-text${i}">A strange seed was planted on its back at birth.The plant sprouts and grows with this POKéMON.</p>
+                            <p id="flavor-text${i}"></p>
                             <div class="about-container">
                                 <div class="about-properties">
                                     <span>Height</span>
